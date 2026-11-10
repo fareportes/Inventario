@@ -43,6 +43,16 @@ textarea{width:100%;height:120px;font:12px monospace;background:var(--card);colo
 .ind{background:var(--wa);color:var(--bg);font-weight:800;padding:6px 10px;border-radius:8px;margin-bottom:8px;text-align:center}.indc{border-color:var(--wa);border-width:2px}.btn.on{background:var(--wa);color:var(--bg)}.ind.done{background:var(--ok)}.ind.over{background:var(--er)}.st{font-size:13px;margin-top:8px;color:var(--mu);overflow-wrap:anywhere}input[type=file]{width:100%;margin-top:8px}[hidden]{display:none!important}
 .tb{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}.tb th,.tb td{padding:8px 6px;border-bottom:1px solid var(--bd);text-align:right}.tb th:first-child,.tb td:first-child{text-align:left}.tb th{color:var(--mu);font-size:12px}.tb td{font-weight:600}
 .dt td:nth-child(2),.dt th:nth-child(2){text-align:left;font-weight:400}.dt td{font-size:13px}
+@media(max-width:600px){.tb th,.tb td{padding:6px 3px}.dt td,.dt th{font-size:12px}.dt td:nth-child(2){overflow-wrap:anywhere}}
+@media(hover:hover){.btn:hover,.ch button:hover,nav button:hover{filter:brightness(.95)}.pk:hover,.it:hover{background:rgba(127,127,127,.08)}}
+@media(min-width:900px){
+header{padding-left:max(12px,calc((100% - 1160px)/2 + 16px));padding-right:max(12px,calc((100% - 1160px)/2 + 16px))}
+main{max-width:1160px;padding:16px}
+nav button{flex:none;padding:10px 22px;font-size:14px}
+#sc{display:grid;grid-template-columns:minmax(340px,460px) 1fr;gap:16px;align-items:start}
+#ar{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;align-items:start}
+#sum{max-width:520px}
+}
 </style>
 </head>
 <body>
@@ -52,7 +62,7 @@ textarea{width:100%;height:120px;font:12px monospace;background:var(--card);colo
 <nav><button data-t="sc" class="on">Escanear</button><button data-t="co">Conteo</button><button data-t="di">Diferencias</button><button data-t="ar">Archivos</button></nav>
 </header>
 <main>
-<section id="sc">
+<section id="sc"><div class="scl">
 <div id="cam" hidden><video id="vid" playsinline muted></video><div id="h5"></div></div>
 <div id="ct" hidden style="margin-bottom:8px"><div class="row" style="margin-bottom:6px"><label id="zw" class="fx lb" style="margin:0">Zoom <input type="range" id="zm" style="width:44vw;max-width:260px"></label><button class="btn fx" id="tq" hidden>🔦 Luz</button><button class="btn fx" id="sw" hidden>🔄 Cámara</button></div><small class="st" style="margin:0">Toca la imagen para enfocar. Mantén el código a unos 15 a 20 cm, o aléjate un poco y usa el zoom.</small></div>
 <div class="row" style="margin-bottom:8px"><button class="btn p" id="camBtn">Abrir cámara</button><button class="btn fx" id="undo">Deshacer</button></div>
@@ -60,9 +70,9 @@ textarea{width:100%;height:120px;font:12px monospace;background:var(--card);colo
 <label class="lb"><input type="checkbox" id="plus1" checked> Sumar 1 al escanear (si lo apagas, tú escribes la cantidad)</label>
 <label class="lb"><input type="checkbox" id="indOn" checked> Alerta sonora en productos de venta individual (“1 de …”)</label>
 <label class="lb"><input type="checkbox" id="okOn" checked> Alerta cuando el producto llega al total del sistema (o se pasa)</label>
-<div id="msg"></div>
+</div><div class="scr"><div id="msg"></div>
 <div class="card" id="last" hidden></div>
-<div class="card" id="pick" hidden></div>
+<div class="card" id="pick" hidden></div></div>
 </section>
 <section id="co" hidden>
 <input type="search" id="fc" placeholder="Filtrar conteo por nombre o código">
@@ -184,7 +194,7 @@ $('zm').oninput=e=>{applyC({advanced:[{zoom:+e.target.value}]}).catch(()=>{})};
 $('tq').onclick=async()=>{tchOn=!tchOn;try{await applyC({advanced:[{torch:tchOn}]});$('tq').classList.toggle('on',tchOn)}catch(e){tchOn=!tchOn}};
 $('sw').onclick=async()=>{if(devs.length<2||!stream)return;const n=(di+1)%devs.length;TK++;stream.getTracks().forEach(t=>t.stop());stream=null;track=null;try{await startStream(devs[n].deviceId)}catch(e){msg('No se pudo cambiar de cámara','er');camOff()}};
 // pestañas
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));['sc','co','di','ar'].forEach(s=>$(s).hidden=s!==b.dataset.t);if(b.dataset.t==='co')lista();if(b.dataset.t==='di')dif();if(b.dataset.t==='ar')info()});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));['sc','co','di','ar'].forEach(s=>$(s).hidden=s!==b.dataset.t);if(b.dataset.t==='co')lista();if(b.dataset.t==='di')dif();if(b.dataset.t==='ar')info();if(b.dataset.t==='sc'&&matchMedia('(pointer:fine)').matches)$('in').focus()});
 function lista(){const q=$('fc').value.toLowerCase().trim();
  let r=Object.keys(S.c).map(c=>[+c,'c']).concat(Object.keys(S.u).map(k=>[k,'u']));
  r=r.filter(([k,t])=>!q||(t==='c'?(name(k).toLowerCase().includes(q)||String(k).startsWith(q)):k.includes(q))).reverse();
@@ -308,6 +318,7 @@ const adm=()=>{$('gcard').hidden=location.hash!=='#admin'};adm();window.addEvent
 if(CFG.on&&Q.length)sched(2000);
 info();
 head();
+if(matchMedia('(pointer:fine)').matches)$('in').focus();
 </script>
 </body>
 </html>
