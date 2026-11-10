@@ -95,9 +95,9 @@ nav button{flex:none;padding:10px 22px;font-size:14px}
 <section id="ar" hidden>
 <div class="card"><b>1. Productos y códigos de barra</b><br><small>Excel o CSV con columnas: Código, Nombre, Código de Barra</small><input type="file" id="f1" accept=".xlsx,.xls,.csv"><div class="st" id="s1"></div></div>
 <div class="card"><b>2. Inventario consolidado</b><br><small>Excel o CSV con columnas: Código Producto, Producto, Existencia Actual</small><input type="file" id="f2" accept=".xlsx,.xls,.csv"><div class="st" id="s2"></div></div>
-<div class="card" id="gcard" hidden><b>Configuración de Google Sheets (administrador)</b><br><small>Pega la URL de tu aplicación web de Apps Script (termina en /exec) y la clave</small>
+<div class="card" id="gcard" hidden><b>Configuración de Google Sheets (administrador)</b><br><small>Pega la URL de tu aplicación web de Apps Script (termina en /exec). La clave es opcional</small>
 <input type="text" id="gu" placeholder="https://script.google.com/macros/s/.../exec" style="margin-top:8px">
-<input type="text" id="gk" placeholder="Clave (la misma del script)" style="margin-top:8px">
+<input type="text" id="gk" placeholder="Clave (opcional, déjala vacía si no usas)" style="margin-top:8px">
 <div class="row" style="margin-top:8px"><input type="text" id="gd" placeholder="Dispositivo (ej. Cel Ana)"><input type="text" id="gl" placeholder="Lote (ej. Inventario-2026-11-10)"></div>
 <label class="lb"><input type="checkbox" id="gon"> Enviar cada escaneo automáticamente</label>
 <div class="row" style="margin-top:8px"><button class="btn" id="gs">Probar y sincronizar</button><button class="btn" id="gsys">Enviar inventario del sistema</button></div>
@@ -265,7 +265,7 @@ $('exx').onclick=async()=>{const b=$('exx'),x=$('xst');b.disabled=true;b.textCon
  window.ONLYRES=0;b.disabled=false;b.textContent='Exportar Excel'};
 $('exr').onclick=()=>{window.ONLYRES=1;$('exx').onclick()};
 $('snd').onclick=async()=>{const b=$('snd'),x=$('xst');
- if(!CFG.u||!CFG.k){x.className='st er';x.textContent='Falta la clave: abre Archivos > Configurar sincronización y escribe la URL y la clave.';return}
+ if(!CFG.u){x.className='st er';x.textContent='Falta la URL: abre Archivos > Configurar sincronización y escríbela.';return}
  if(sending){x.className='st wa';x.textContent='Hay un envío en curso, intenta en unos segundos.';return}
  const filas=Object.keys(S.c).map(c=>['c',c,name(c),P[c]&&P[c].b||'',S.c[c]]).concat(Object.keys(S.u).map(k=>['u',k,'Código desconocido',k,S.u[k]]));
  if(!filas.length){x.className='st wa';x.textContent='Aún no hay nada contado.';return}
@@ -333,11 +333,11 @@ function gcfg(){CFG.u=$('gu').value.trim();CFG.k=$('gk').value.trim();CFG.d=$('g
 $('gu').value=CFG.u;$('gk').value=CFG.k;$('gd').value=CFG.d;$('gl').value=CFG.l;$('gon').checked=!!CFG.on;
 ['gu','gk','gd','gl'].forEach(id=>$(id).onchange=gcfg);
 $('gon').onchange=()=>{gcfg();if(CFG.on)flush()};
-$('gs').onclick=async()=>{gcfg();if(!CFG.u||!CFG.k)return gmsg('Falta la URL o la clave','er');
+$('gs').onclick=async()=>{gcfg();if(!CFG.u)return gmsg('Falta la URL','er');
  try{const j=await post({accion:'ping'});if(!j.ok)throw new Error(j.error||'Error del script')}
  catch(e){return gmsg('No se pudo conectar: '+(e.message||'')+'. Revisa la URL, la clave y el internet.','er')}
  gmsg('Conexión correcta. Pendientes: '+Q.length,'ok');await flush()};
-$('gsys').onclick=async()=>{gcfg();if(!CFG.u||!CFG.k)return gmsg('Falta la URL o la clave','er');
+$('gsys').onclick=async()=>{gcfg();if(!CFG.u)return gmsg('Falta la URL','er');
  const filas=Object.keys(INV).map(c=>[+c,name(c),P[c]&&P[c].b||'',INV[c]]);gmsg('Enviando '+filas.length+' productos…');
  try{const j=await post({accion:'sistema',filas:filas},170000);if(!j.ok)throw new Error(j.error||'Error del script');gmsg('✔ Inventario del sistema enviado ('+filas.length+' productos). La hoja Sistema ya calcula las diferencias.','ok')}
  catch(e){gmsg('No se pudo enviar: '+(e.message||''),'er')}};
