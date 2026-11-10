@@ -70,6 +70,8 @@ nav button{flex:none;padding:10px 22px;font-size:14px}
 <label class="lb"><input type="checkbox" id="plus1" checked> Sumar 1 al escanear (si lo apagas, tú escribes la cantidad)</label>
 <label class="lb"><input type="checkbox" id="indOn" checked> Alerta sonora en productos de venta individual (“1 de …”)</label>
 <label class="lb"><input type="checkbox" id="okOn" checked> Alerta cuando el producto llega al total del sistema (o se pasa)</label>
+<label class="lb">Pausa entre lecturas iguales <select id="gap"><option value="500">0.5 s</option><option value="1000">1 s</option><option value="1500">1.5 s</option><option value="2500">2.5 s</option></select></label>
+<label class="lb"><input type="checkbox" id="autocam"> Abrir la cámara al entrar</label>
 </div><div class="scr"><div id="msg"></div>
 <div class="card" id="last" hidden></div>
 <div class="card" id="pick" hidden></div></div>
@@ -145,6 +147,7 @@ $('in').addEventListener('keydown',e=>{if(e.key!=='Enter')return;const v=e.targe
  if(!stream&&!h5)e.target.focus()});
 $('undo').onclick=()=>{const l=S.log.pop();if(!l)return msg('Nada que deshacer');const[t,k,d]=l;const cur0=S[t][k]||0,v=cur0-d;v>0?S[t][k]=v:delete S[t][k];save();enq(t,k,Math.max(v,0)-cur0);head();msg('Deshecho: '+(t==='c'?name(k):'código '+k)+' ('+(-d)+')','wa');if(!$('last').hidden&&t==='c')last(+$('last').dataset.c)};
 // cámara
+let GAP=1000;try{GAP=+localStorage.getItem('invgap')||1000}catch(e){}
 let stream=null,det=null,h5=null,lastScan={k:'',t:0};
 function beep(){tone(900,0,.09);try{navigator.vibrate&&navigator.vibrate(60)}catch(e){}}
 let AC=null;
@@ -155,11 +158,21 @@ function overSnd(off){[[220,0],[180,.22]].forEach(a=>tone(a[0],(off||0)+a[1],.2)
 function chk(c,pv,off){if(!$('okOn').checked)return;const s=INV[c],q=S.c[c]||0;if(s==null||q===pv)return;
  if(q===s){doneSnd(off);msg('✔ COMPLETO: '+name(c)+' ('+q+' de '+s+')','ok')}
  else if(q>s&&q>pv){overSnd(off);msg('⚠ SE PASÓ: '+name(c)+' ('+q+' contados, sistema '+s+')','er')}}
-function onCam(v){const n=Date.now();if(v===lastScan.k&&n-lastScan.t<2000){lastScan.t=n;return}lastScan={k:v,t:n};beep();handle(v)}
+function onCam(v){const n=Date.now();if(v===lastScan.k&&n-lastScan.t<GAP){lastScan.t=n;return}lastScan={k:v,t:n};beep();flash();handle(v)}
 let TK=0,track=null,devs=[],di=0,tchOn=false;
-const VID={width:{ideal:1920},height:{ideal:1080}};
+const VID={width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30}};
 const FMT=['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf'];
-function loop(){const my=++TK;(async function l(){if(!stream||my!==TK)return;try{const r=await det.detect($('vid'));if(r[0])onCam(r[0].rawValue)}catch(e){}setTimeout(l,100)})()}
+let lastHit=0,cv=null;
+function flash(){const c=$('cam');c.style.outline='4px solid #14804a';setTimeout(()=>{c.style.outline=''},180)}
+async function refocus(x,y){try{await applyC({advanced:[{focusMode:'single-shot',pointsOfInterest:[{x:x==null?.5:x,y:y==null?.5:y}]}]})}catch(e1){try{await applyC({advanced:[{focusMode:'single-shot'}]})}catch(e2){}}
+ setTimeout(()=>{applyC({advanced:[{focusMode:'continuous'}]}).catch(()=>{})},1200)}
+function loop(){const my=++TK,v=$('vid');lastHit=Date.now();
+ (async function l(){if(!stream||my!==TK)return;
+  try{let src=v;const w=v.videoWidth,h=v.videoHeight;
+   if(w&&h){const sw=w*.9,sh=h*.6,k=Math.min(1,1280/sw);cv=cv||document.createElement('canvas');cv.width=Math.round(sw*k);cv.height=Math.round(sh*k);cv.getContext('2d').drawImage(v,w*.05,h*.2,sw,sh,0,0,cv.width,cv.height);src=cv}
+   const r=await det.detect(src);if(r[0]){lastHit=Date.now();onCam(r[0].rawValue)}}catch(e){}
+  if(Date.now()-lastHit>3000){lastHit=Date.now();refocus()}
+  setTimeout(l,40)})()}
 function loadH5(){return new Promise((ok,no)=>{if(window.Html5Qrcode)return ok();const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js';s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
 const applyC=async c=>{if(track)return track.applyConstraints(c);if(h5)return h5.applyVideoConstraints(c)};
 async function tools(){let caps={};try{caps=track?track.getCapabilities():(h5?h5.getRunningTrackCapabilities():{})}catch(e){}caps=caps||{};
@@ -181,7 +194,7 @@ $('camBtn').onclick=async()=>{if(stream||h5)return camOff();
  try{$('cam').hidden=false;
   if('BarcodeDetector' in window){det=new BarcodeDetector({formats:FMT});await startStream()}
   else{$('vid').hidden=true;await loadH5();const F=Html5QrcodeSupportedFormats;h5=new Html5Qrcode('h5',{formatsToSupport:[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,F.CODE_128,F.CODE_39,F.ITF]});
-   const cfg={fps:10,qrbox:{width:300,height:120}};
+   const cfg={fps:20,qrbox:{width:300,height:120}};
    try{await h5.start({facingMode:'environment'},Object.assign({videoConstraints:Object.assign({facingMode:'environment'},VID)},cfg),onCam)}
    catch(e){await h5.start({facingMode:'environment'},cfg,onCam)}
    await tools()}
@@ -316,8 +329,13 @@ window.addEventListener('online',()=>{if(CFG.on)flush()});
 setInterval(()=>{if(CFG.on&&Q.length&&!sending)flush()},30000);
 const adm=()=>{$('gcard').hidden=location.hash!=='#admin'};adm();window.addEventListener('hashchange',adm);$('gsn').onclick=$('gs').onclick;
 if(CFG.on&&Q.length)sched(2000);
+$('gap').value=String(GAP);if(!$('gap').value)$('gap').value='1000';
+$('gap').onchange=e=>{GAP=+e.target.value;try{localStorage.setItem('invgap',GAP)}catch(x){}};
+try{$('autocam').checked=localStorage.getItem('invauto')==='1'}catch(e){}
+$('autocam').onchange=e=>{try{localStorage.setItem('invauto',e.target.checked?'1':'0')}catch(x){}};
 info();
 head();
+if($('autocam').checked)$('camBtn').click();
 if(matchMedia('(pointer:fine)').matches)$('in').focus();
 </script>
 </body>
