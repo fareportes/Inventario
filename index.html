@@ -81,7 +81,7 @@ nav button{flex:none;padding:10px 22px;font-size:14px}
 <div class="card" id="sum" style="overflow-x:auto"></div>
 <div class="ch" id="chips"></div>
 <div class="card" id="dl"></div>
-<div class="row"><button class="btn p" id="exx">Exportar Excel</button><button class="btn" id="exr">Solo resumen</button><button class="btn" id="exp">Exportar CSV</button></div><div class="row" style="margin-top:8px"><button class="btn d" id="rst">Reiniciar conteo</button></div><div class="st" id="xst"></div>
+<div class="row"><button class="btn p" id="exx">Exportar Excel</button><button class="btn" id="exr">Solo resumen</button><button class="btn" id="exp">Exportar CSV</button></div><div class="row" style="margin-top:8px"><button class="btn p" id="snd">☁ Enviar conteo al Sheet</button></div><div class="row" style="margin-top:8px"><button class="btn d" id="rst">Reiniciar conteo</button></div><div class="st" id="xst"></div>
 <div id="csvbox" hidden style="margin-top:10px"><textarea id="csvt" readonly></textarea><button class="btn" id="cp">Copiar CSV</button></div>
 </section>
 <section id="cf" hidden>
@@ -264,6 +264,17 @@ $('exx').onclick=async()=>{const b=$('exx'),x=$('xst');b.disabled=true;b.textCon
  catch(e){x.className='st er';x.textContent=e&&e.code==='declined'?'Descarga cancelada.':'No se pudo generar el Excel. '+(e&&e.message?e.message:'')}
  window.ONLYRES=0;b.disabled=false;b.textContent='Exportar Excel'};
 $('exr').onclick=()=>{window.ONLYRES=1;$('exx').onclick()};
+$('snd').onclick=async()=>{const b=$('snd'),x=$('xst');
+ if(!CFG.u||!CFG.k){x.className='st er';x.textContent='Falta la clave: abre Archivos > Configurar sincronización y escribe la URL y la clave.';return}
+ if(sending){x.className='st wa';x.textContent='Hay un envío en curso, intenta en unos segundos.';return}
+ const filas=Object.keys(S.c).map(c=>['c',c,name(c),P[c]&&P[c].b||'',S.c[c]]).concat(Object.keys(S.u).map(k=>['u',k,'Código desconocido',k,S.u[k]]));
+ if(!filas.length){x.className='st wa';x.textContent='Aún no hay nada contado.';return}
+ const n=Q.length;sending=true;b.disabled=true;x.className='st';x.textContent='Enviando '+filas.length+' productos…';
+ try{const j=await post({accion:'conteo',filas:filas},120000);if(!j.ok)throw new Error(j.error||'Error del script');
+  Q.splice(0,n);saveQnow();head();
+  x.className='st ok';x.textContent='✔ Conteo enviado: '+filas.length+' productos'+(j.ajustes?' ('+j.ajustes+' filas nuevas en el Sheet)':' (el Sheet ya estaba al día)')+'. Lote: '+CFG.l+'.'+(j.aviso?' ⚠ '+j.aviso:'')}
+ catch(e){x.className='st er';x.textContent='No se pudo enviar: '+(e.message||e)+(/Acción desconocida/.test(e.message||'')?'. El script publicado es una versión vieja: en Apps Script usa Implementar > Administrar implementaciones > Nueva versión.':'')}
+ sending=false;b.disabled=false};
 let rt=0;$('rst').onclick=()=>{if(!rt){$('rst').textContent='¿Seguro? Toca otra vez';rt=setTimeout(()=>{rt=0;$('rst').textContent='Reiniciar conteo'},4000);return}
  clearTimeout(rt);rt=0;S={c:{},u:{},log:[]};save();head();dif();$('xst').className='st';$('xst').textContent='Conteo local reiniciado. En la hoja el lote sigue igual: cambia el nombre del lote en Archivos si empiezas un conteo nuevo.';$('last').hidden=true;$('rst').textContent='Reiniciar conteo'};
 //<<P
