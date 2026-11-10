@@ -81,7 +81,7 @@ nav button{flex:none;padding:10px 22px;font-size:14px}
 <div class="card" id="sum" style="overflow-x:auto"></div>
 <div class="ch" id="chips"></div>
 <div class="card" id="dl"></div>
-<div class="row"><button class="btn p" id="exx">Exportar Excel</button><button class="btn" id="exr">Solo resumen</button><button class="btn" id="exp">Exportar CSV</button></div><div class="row" style="margin-top:8px"><button class="btn p" id="snd">☁ Enviar conteo al Sheet</button></div><div class="row" style="margin-top:8px"><button class="btn d" id="rst">Reiniciar conteo</button></div><div class="st" id="xst"></div>
+<div class="row"><button class="btn p" id="exx">Exportar Excel</button><button class="btn" id="exp">Exportar CSV</button></div><div class="row" style="margin-top:8px"><button class="btn p" id="snd">☁ Enviar conteo al Sheet</button></div><div class="row" style="margin-top:8px"><button class="btn d" id="rst">Reiniciar conteo</button></div><div class="st" id="xst"></div>
 <div id="csvbox" hidden style="margin-top:10px"><textarea id="csvt" readonly></textarea><button class="btn" id="cp">Copiar CSV</button></div>
 </section>
 <section id="cf" hidden>
@@ -249,21 +249,19 @@ function buildBook(R,SYSv,PHYS,TOTv,CONT,dateStr){const H=['Código','Productos'
  const res=[['Resumen del conteo de inventario','',''],['Fecha',dateStr,''],['','',''],['Concepto','Productos','Unidades'],['Sistema (inventario)',TOTv,SYSv],['Contado (físico)',CONT,PHYS],['Diferencia',CONT-TOTv,PHYS-SYSv],['Cuadrados',cnt.c||0,''],['Faltantes',cnt.f||0,un.f||0],['Sobrantes',cnt.s||0,un.s||0],['No contados',cnt.nc||0,un.nc||0],['','',''],['Nota','Los códigos desconocidos escaneados se cuentan como sobrantes.','']];
  const mk=(a,w,f)=>{const ws=XLSX.utils.aoa_to_sheet(a);ws['!cols']=w.map(x=>({wch:x}));if(f)ws['!autofilter']={ref:'A1:F'+a.length};return ws};
  const W=[10,55,11,9,11,12],wb=XLSX.utils.book_new();
- XLSX.utils.book_append_sheet(wb,mk([H].concat(det.map(rw)),W,1),'Resumen');
- XLSX.utils.book_append_sheet(wb,mk([H].concat(dif.map(rw)),W,1),'Diferencias');
- XLSX.utils.book_append_sheet(wb,mk(res,[30,14,14]),'Totales');
- if(window.ONLYRES){wb.SheetNames=['Resumen'];wb.Sheets={Resumen:wb.Sheets.Resumen}}return wb}
+ XLSX.utils.book_append_sheet(wb,mk([H].concat(det.map(rw)),W,1),'Conteo');
+  XLSX.utils.book_append_sheet(wb,mk(res,[30,14,14]),'Totales');
+ return wb}
 //X>>
 $('exx').onclick=async()=>{const b=$('exx'),x=$('xst');b.disabled=true;b.textContent='Generando…';x.className='st';x.textContent='';
  try{await loadX();const wb=buildBook(rows(),SYS,sum(S.c)+sum(S.u),TOT,Object.keys(S.c).length,new Date().toLocaleString('es-HN'));
-  const arr=XLSX.write(wb,{bookType:'xlsx',type:'array'}),fn=(window.ONLYRES?'resumen_conteo_':'conteo_inventario_')+ld()+'.xlsx';
+  const arr=XLSX.write(wb,{bookType:'xlsx',type:'array'}),fn='conteo_inventario_'+ld()+'.xlsx';
   const d=window.claude&&await claude.use('downloads');
   if(!d&&!window.claude){dl(fn,new Blob([arr],{type:'application/octet-stream'}));x.className='st ok';x.textContent='✔ Excel generado.'}
   else if(!d){x.className='st er';x.textContent='Aquí no se puede descargar el Excel. Abre la página en el navegador o usa Exportar CSV.';$('exp').onclick()}
-  else{await d.save({filename:fn,data:new Blob([arr],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})});x.className='st ok';x.textContent='✔ Excel generado: hojas Resumen, Diferencias y Detalle completo.'}}
+  else{await d.save({filename:fn,data:new Blob([arr],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})});x.className='st ok';x.textContent='✔ Excel generado: hoja Conteo (todos los productos con su estado) y hoja Totales.'}}
  catch(e){x.className='st er';x.textContent=e&&e.code==='declined'?'Descarga cancelada.':'No se pudo generar el Excel. '+(e&&e.message?e.message:'')}
- window.ONLYRES=0;b.disabled=false;b.textContent='Exportar Excel'};
-$('exr').onclick=()=>{window.ONLYRES=1;$('exx').onclick()};
+ b.disabled=false;b.textContent='Exportar Excel'};
 $('snd').onclick=async()=>{const b=$('snd'),x=$('xst');
  if(!CFG.u){x.className='st er';x.textContent='Falta la URL: abre Archivos > Configurar sincronización y escríbela.';return}
  if(sending){x.className='st wa';x.textContent='Hay un envío en curso, intenta en unos segundos.';return}
