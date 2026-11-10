@@ -23,8 +23,8 @@ button,input{font:inherit;color:inherit}
 .btn.p{background:var(--ac);border-color:var(--ac);color:#fff}.btn.d{color:var(--er)}
 input[type=text],input[type=search],input[type=number]{width:100%;padding:12px;border-radius:10px;border:1px solid var(--bd);background:var(--card);font-size:16px}
 .row{display:flex;gap:8px;align-items:center}.row>*{flex:1}.row>.fx{flex:none}
-#cam{position:relative;background:#000;border-radius:12px;overflow:hidden;margin-bottom:12px;max-height:260px}
-#cam video{width:100%;max-height:260px;object-fit:cover;display:block}
+#cam{position:relative;background:#000;border-radius:12px;overflow:hidden;margin-bottom:8px;max-height:300px}
+#cam video{width:100%;max-height:300px;object-fit:cover;display:block}
 #cam::after{content:"";position:absolute;left:12%;right:12%;top:50%;height:2px;background:rgba(255,60,60,.85)}
 #msg{min-height:22px;margin:8px 0;font-weight:600}.ok{color:var(--ok)}.wa{color:var(--wa)}.er{color:var(--er)}
 .it{display:flex;gap:8px;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--bd)}
@@ -40,7 +40,7 @@ input[type=text],input[type=search],input[type=number]{width:100%;padding:12px;b
 .f{color:var(--er)}.s{color:var(--wa)}.c{color:var(--ok)}.nc{color:var(--mu)}
 .lb{display:flex;align-items:center;gap:8px;color:var(--mu);font-size:13px;margin-top:8px}
 textarea{width:100%;height:120px;font:12px monospace;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:8px}
-.ind{background:var(--wa);color:var(--bg);font-weight:800;padding:6px 10px;border-radius:8px;margin-bottom:8px;text-align:center}.indc{border-color:var(--wa);border-width:2px}.ind.done{background:var(--ok)}.ind.over{background:var(--er)}.st{font-size:13px;margin-top:8px;color:var(--mu);overflow-wrap:anywhere}input[type=file]{width:100%;margin-top:8px}[hidden]{display:none!important}
+.ind{background:var(--wa);color:var(--bg);font-weight:800;padding:6px 10px;border-radius:8px;margin-bottom:8px;text-align:center}.indc{border-color:var(--wa);border-width:2px}.btn.on{background:var(--wa);color:var(--bg)}.ind.done{background:var(--ok)}.ind.over{background:var(--er)}.st{font-size:13px;margin-top:8px;color:var(--mu);overflow-wrap:anywhere}input[type=file]{width:100%;margin-top:8px}[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -52,6 +52,7 @@ textarea{width:100%;height:120px;font:12px monospace;background:var(--card);colo
 <main>
 <section id="sc">
 <div id="cam" hidden><video id="vid" playsinline muted></video><div id="h5"></div></div>
+<div id="ct" hidden style="margin-bottom:8px"><div class="row" style="margin-bottom:6px"><label id="zw" class="fx lb" style="margin:0">Zoom <input type="range" id="zm" style="width:44vw;max-width:260px"></label><button class="btn fx" id="tq" hidden>🔦 Luz</button><button class="btn fx" id="sw" hidden>🔄 Cámara</button></div><small class="st" style="margin:0">Toca la imagen para enfocar. Mantén el código a unos 15 a 20 cm, o aléjate un poco y usa el zoom.</small></div>
 <div class="row" style="margin-bottom:8px"><button class="btn p" id="camBtn">Abrir cámara</button><button class="btn fx" id="undo">Deshacer</button></div>
 <input type="search" id="in" inputmode="search" autocomplete="off" placeholder="Escanea, digita código o busca por nombre">
 <label class="lb"><input type="checkbox" id="plus1" checked> Sumar 1 al escanear (si lo apagas, tú escribes la cantidad)</label>
@@ -135,16 +136,41 @@ function chk(c,pv,off){if(!$('okOn').checked)return;const s=INV[c],q=S.c[c]||0;i
  if(q===s){doneSnd(off);msg('✔ COMPLETO: '+name(c)+' ('+q+' de '+s+')','ok')}
  else if(q>s&&q>pv){overSnd(off);msg('⚠ SE PASÓ: '+name(c)+' ('+q+' contados, sistema '+s+')','er')}}
 function onCam(v){const n=Date.now();if(v===lastScan.k&&n-lastScan.t<2000){lastScan.t=n;return}lastScan={k:v,t:n};beep();handle(v)}
-async function tick(){if(!stream)return;try{const r=await det.detect($('vid'));if(r[0])onCam(r[0].rawValue)}catch(e){}setTimeout(()=>requestAnimationFrame(tick),120)}
+let TK=0,track=null,devs=[],di=0,tchOn=false;
+const VID={width:{ideal:1920},height:{ideal:1080}};
+const FMT=['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf'];
+function loop(){const my=++TK;(async function l(){if(!stream||my!==TK)return;try{const r=await det.detect($('vid'));if(r[0])onCam(r[0].rawValue)}catch(e){}setTimeout(l,100)})()}
 function loadH5(){return new Promise((ok,no)=>{if(window.Html5Qrcode)return ok();const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js';s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
-async function camOff(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}if(h5){try{await h5.stop()}catch(e){}h5=null}$('cam').hidden=true;$('camBtn').textContent='Abrir cámara'}
+const applyC=async c=>{if(track)return track.applyConstraints(c);if(h5)return h5.applyVideoConstraints(c)};
+async function tools(){let caps={};try{caps=track?track.getCapabilities():(h5?h5.getRunningTrackCapabilities():{})}catch(e){}caps=caps||{};
+ $('ct').hidden=false;
+ try{if(caps.focusMode&&caps.focusMode.includes('continuous'))await applyC({advanced:[{focusMode:'continuous'}]})}catch(e){}
+ $('zw').hidden=!caps.zoom;
+ if(caps.zoom){const z=$('zm');z.min=caps.zoom.min;z.max=caps.zoom.max;z.step=caps.zoom.step||.1;const v=Math.min(2,caps.zoom.max);z.value=v;try{await applyC({advanced:[{zoom:v}]})}catch(e){}}
+ tchOn=false;$('tq').classList.remove('on');$('tq').hidden=!caps.torch;$('sw').hidden=devs.length<2}
+async function startStream(id){const v=id?Object.assign({deviceId:{exact:id}},VID):Object.assign({facingMode:{ideal:'environment'}},VID);
+ stream=await navigator.mediaDevices.getUserMedia({video:v,audio:false});$('vid').srcObject=stream;await $('vid').play();
+ track=stream.getVideoTracks()[0];
+ if(!devs.length){try{const vs=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput');const bk=vs.filter(d=>/back|rear|trasera|environment/i.test(d.label));devs=bk.length?bk:vs}catch(e){}}
+ const cur=track.getSettings&&track.getSettings().deviceId;di=Math.max(0,devs.findIndex(d=>d.deviceId===cur));
+ loop();await tools()}
+async function camOff(){TK++;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}track=null;devs=[];if(h5){try{await h5.stop()}catch(e){}h5=null}$('cam').hidden=true;$('ct').hidden=true;$('vid').hidden=false;$('camBtn').textContent='Abrir cámara'}
 $('camBtn').onclick=async()=>{if(stream||h5)return camOff();
  try{$('cam').hidden=false;
-  if('BarcodeDetector' in window){det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf']});
-   stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});$('vid').srcObject=stream;await $('vid').play();tick()}
-  else{$('vid').hidden=true;await loadH5();h5=new Html5Qrcode('h5');await h5.start({facingMode:'environment'},{fps:10,qrbox:{width:260,height:140}},onCam)}
+  if('BarcodeDetector' in window){det=new BarcodeDetector({formats:FMT});await startStream()}
+  else{$('vid').hidden=true;await loadH5();const F=Html5QrcodeSupportedFormats;h5=new Html5Qrcode('h5',{formatsToSupport:[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,F.CODE_128,F.CODE_39,F.ITF]});
+   const cfg={fps:10,qrbox:{width:300,height:120}};
+   try{await h5.start({facingMode:'environment'},Object.assign({videoConstraints:Object.assign({facingMode:'environment'},VID)},cfg),onCam)}
+   catch(e){await h5.start({facingMode:'environment'},cfg,onCam)}
+   await tools()}
   $('camBtn').textContent='Cerrar cámara'}
  catch(e){await camOff();msg('No se pudo abrir la cámara. Puedes usar un lector externo o digitar el código.','er')}};
+$('cam').addEventListener('click',async e=>{if(!stream&&!h5)return;const r=$('cam').getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
+ try{await applyC({advanced:[{focusMode:'single-shot',pointsOfInterest:[{x,y}]}]})}catch(e1){try{await applyC({advanced:[{focusMode:'single-shot'}]})}catch(e2){}}
+ setTimeout(()=>{applyC({advanced:[{focusMode:'continuous'}]}).catch(()=>{})},1500)});
+$('zm').oninput=e=>{applyC({advanced:[{zoom:+e.target.value}]}).catch(()=>{})};
+$('tq').onclick=async()=>{tchOn=!tchOn;try{await applyC({advanced:[{torch:tchOn}]});$('tq').classList.toggle('on',tchOn)}catch(e){tchOn=!tchOn}};
+$('sw').onclick=async()=>{if(devs.length<2||!stream)return;const n=(di+1)%devs.length;TK++;stream.getTracks().forEach(t=>t.stop());stream=null;track=null;try{await startStream(devs[n].deviceId)}catch(e){msg('No se pudo cambiar de cámara','er');camOff()}};
 // pestañas
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));['sc','co','di','ar'].forEach(s=>$(s).hidden=s!==b.dataset.t);if(b.dataset.t==='co')lista();if(b.dataset.t==='di')dif();if(b.dataset.t==='ar')info()});
 function lista(){const q=$('fc').value.toLowerCase().trim();
