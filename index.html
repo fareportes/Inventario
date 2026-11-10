@@ -53,13 +53,15 @@ nav button{flex:none;padding:10px 22px;font-size:14px}
 #ar{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;align-items:start}
 #sum{max-width:520px}
 }
+#cf{max-width:560px}
+@media(max-width:420px){nav button{font-size:12px;padding:9px 2px}}
 </style>
 </head>
 <body>
 <header>
 <h1>Inventario con escáner</h1>
 <div class="prog" id="prog"></div><div class="bar"><i id="pb"></i></div>
-<nav><button data-t="sc" class="on">Escanear</button><button data-t="co">Conteo</button><button data-t="di">Diferencias</button><button data-t="ar">Archivos</button></nav>
+<nav><button data-t="sc" class="on">Escanear</button><button data-t="co">Conteo</button><button data-t="di">Diferencias</button><button data-t="ar">Archivos</button><button data-t="cf">Ajustes</button></nav>
 </header>
 <main>
 <section id="sc"><div class="scl">
@@ -67,11 +69,6 @@ nav button{flex:none;padding:10px 22px;font-size:14px}
 <div id="ct" hidden style="margin-bottom:8px"><div class="row" style="margin-bottom:6px"><label id="zw" class="fx lb" style="margin:0">Zoom <input type="range" id="zm" style="width:44vw;max-width:260px"></label><button class="btn fx" id="tq" hidden>🔦 Luz</button><button class="btn fx" id="sw" hidden>🔄 Cámara</button></div><small class="st" style="margin:0">Toca la imagen para enfocar. Mantén el código a unos 15 a 20 cm, o aléjate un poco y usa el zoom.</small></div>
 <div class="row" style="margin-bottom:8px"><button class="btn p" id="camBtn">Abrir cámara</button><button class="btn fx" id="undo">Deshacer</button></div>
 <input type="search" id="in" inputmode="search" autocomplete="off" placeholder="Escanea, digita código o busca por nombre">
-<label class="lb"><input type="checkbox" id="plus1" checked> Sumar 1 al escanear (si lo apagas, tú escribes la cantidad)</label>
-<label class="lb"><input type="checkbox" id="indOn" checked> Alerta sonora en productos de venta individual (“1 de …”)</label>
-<label class="lb"><input type="checkbox" id="okOn" checked> Alerta cuando el producto llega al total del sistema (o se pasa)</label>
-<label class="lb">Pausa entre lecturas iguales <select id="gap"><option value="500">0.5 s</option><option value="1000">1 s</option><option value="1500">1.5 s</option><option value="2500">2.5 s</option></select></label>
-<label class="lb"><input type="checkbox" id="autocam"> Abrir la cámara al entrar</label>
 </div><div class="scr"><div id="msg"></div>
 <div class="card" id="last" hidden></div>
 <div class="card" id="pick" hidden></div></div>
@@ -87,6 +84,14 @@ nav button{flex:none;padding:10px 22px;font-size:14px}
 <div class="row"><button class="btn p" id="exx">Exportar Excel</button><button class="btn" id="exr">Solo resumen</button><button class="btn" id="exp">Exportar CSV</button></div><div class="row" style="margin-top:8px"><button class="btn d" id="rst">Reiniciar conteo</button></div><div class="st" id="xst"></div>
 <div id="csvbox" hidden style="margin-top:10px"><textarea id="csvt" readonly></textarea><button class="btn" id="cp">Copiar CSV</button></div>
 </section>
+<section id="cf" hidden>
+<div class="card"><b>Configuración</b><br><small>Se guarda en este dispositivo.</small>
+<label class="lb"><input type="checkbox" id="plus1" checked> Sumar 1 al escanear (si lo apagas, tú escribes la cantidad)</label>
+<label class="lb"><input type="checkbox" id="indOn" checked> Alerta sonora en productos de venta individual (“1 de …”)</label>
+<label class="lb"><input type="checkbox" id="okOn" checked> Alerta cuando el producto llega al total del sistema (o se pasa)</label>
+<label class="lb">Pausa entre lecturas iguales <select id="gap"><option value="500">0.5 s</option><option value="1000">1 s</option><option value="1500">1.5 s</option><option value="2500">2.5 s</option></select></label>
+<label class="lb"><input type="checkbox" id="autocam"> Abrir la cámara al entrar</label></div>
+</section>
 <section id="ar" hidden>
 <div class="card"><b>1. Productos y códigos de barra</b><br><small>Excel o CSV con columnas: Código, Nombre, Código de Barra</small><input type="file" id="f1" accept=".xlsx,.xls,.csv"><div class="st" id="s1"></div></div>
 <div class="card"><b>2. Inventario consolidado</b><br><small>Excel o CSV con columnas: Código Producto, Producto, Existencia Actual</small><input type="file" id="f2" accept=".xlsx,.xls,.csv"><div class="st" id="s2"></div></div>
@@ -97,7 +102,7 @@ nav button{flex:none;padding:10px 22px;font-size:14px}
 <label class="lb"><input type="checkbox" id="gon"> Enviar cada escaneo automáticamente</label>
 <div class="row" style="margin-top:8px"><button class="btn" id="gs">Probar y sincronizar</button><button class="btn" id="gsys">Enviar inventario del sistema</button></div>
 <small>Todos los celulares deben usar el mismo lote. Primero envía el inventario del sistema una vez; después cada celular envía sus escaneos.</small></div>
-<div class="card"><b>Datos en uso</b><div class="st" id="s0"></div><div class="st" id="gst"></div><small>El conteo ya registrado se conserva al cargar archivos nuevos. Si empiezas de cero, usa Reiniciar conteo en Diferencias.</small><div class="row" style="margin-top:8px"><button class="btn" id="gsn">Sincronizar con Sheets</button><button class="btn" id="orig">Restaurar datos originales</button></div></div>
+<div class="card"><b>Datos en uso</b><div class="st" id="s0"></div><div class="st" id="gst"></div><small>El conteo ya registrado se conserva al cargar archivos nuevos. Si empiezas de cero, usa Reiniciar conteo en Diferencias.</small><div class="row" style="margin-top:8px"><button class="btn" id="gsn">Sincronizar con Sheets</button><button class="btn" id="gcb">Configurar sincronización</button><button class="btn" id="orig">Restaurar datos originales</button></div></div>
 </section>
 </main>
 <script>
@@ -116,7 +121,7 @@ setData(CUR);
 function dl(fn,b){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=fn;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
 function msg(t,c){$('msg').textContent=t;$('msg').className=c||''}
 function add(t,k,d,set){const cur=S[t][k]||0;let v=set!=null?set:cur+d;v=Math.max(0,Math.round(v));if(v===cur)return;S.log.push([t,k,v-cur]);enq(t,k,v-cur);if(S.log.length>200)S.log.shift();v?S[t][k]=v:delete S[t][k];save();head()}
-function head(){const n=Object.keys(S.c).length;$('prog').textContent=n+' de '+TOT+' productos contados · '+(sum(S.c)+sum(S.u))+' unidades físicas (sistema: '+SYS+')'+(CFG.on&&CFG.u?(Q.length?' · ☁ '+Q.length+' pendientes':' · ☁ al día'):'');$('pb').style.width=Math.min(100,n/TOT*100)+'%'}
+function head(){const n=Object.keys(S.c).length;$('prog').textContent=n+' de '+TOT+' productos contados · '+(sum(S.c)+sum(S.u))+' unidades físicas (sistema: '+SYS+')'+(CFG.on&&CFG.u?(Q.length?' · ☁ '+Q.length+' pendientes':' · ☁ al día'):(Q.length?' · ☁ APAGADA, '+Q.length+' sin enviar':''));$('pb').style.width=Math.min(100,n/TOT*100)+'%'}
 function name(c){return P[c]?P[c].n:'Producto '+c}
 function pick(c){const o=P[c],pv=S.c[c]||0;$('pick').hidden=true;$('in').value='';
  if($('plus1').checked){add('c',c,1);msg('✔ '+o.n,'ok')}else msg('Escribe la cantidad contada','wa');
@@ -207,7 +212,7 @@ $('zm').oninput=e=>{applyC({advanced:[{zoom:+e.target.value}]}).catch(()=>{})};
 $('tq').onclick=async()=>{tchOn=!tchOn;try{await applyC({advanced:[{torch:tchOn}]});$('tq').classList.toggle('on',tchOn)}catch(e){tchOn=!tchOn}};
 $('sw').onclick=async()=>{if(devs.length<2||!stream)return;const n=(di+1)%devs.length;TK++;stream.getTracks().forEach(t=>t.stop());stream=null;track=null;try{await startStream(devs[n].deviceId)}catch(e){msg('No se pudo cambiar de cámara','er');camOff()}};
 // pestañas
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));['sc','co','di','ar'].forEach(s=>$(s).hidden=s!==b.dataset.t);if(b.dataset.t==='co')lista();if(b.dataset.t==='di')dif();if(b.dataset.t==='ar')info();if(b.dataset.t==='sc'&&matchMedia('(pointer:fine)').matches)$('in').focus()});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));['sc','co','di','ar','cf'].forEach(s=>$(s).hidden=s!==b.dataset.t);if(b.dataset.t==='co')lista();if(b.dataset.t==='di')dif();if(b.dataset.t==='ar')info();if(b.dataset.t==='sc'&&matchMedia('(pointer:fine)').matches)$('in').focus()});
 function lista(){const q=$('fc').value.toLowerCase().trim();
  let r=Object.keys(S.c).map(c=>[+c,'c']).concat(Object.keys(S.u).map(k=>[k,'u']));
  r=r.filter(([k,t])=>!q||(t==='c'?(name(k).toLowerCase().includes(q)||String(k).startsWith(q)):k.includes(q))).reverse();
@@ -296,13 +301,13 @@ const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 let sqt=0;const saveQnow=()=>{clearTimeout(sqt);sqt=0;try{localStorage.setItem('invq1',JSON.stringify(Q))}catch(e){}};
 const saveQ=()=>{if(!sqt)sqt=setTimeout(saveQnow,200)};
 addEventListener('pagehide',saveQnow);document.addEventListener('visibilitychange',()=>{if(document.hidden)saveQnow()});
-if(!CFG.u)CFG.u='https://script.google.com/macros/s/AKfycbzv56NAEtf9rgU_lmJCtaR8HYdZtAUv7_eJNiF-4Dqkd_6tX4Q0z0Z9oQffZm3zzc5pMw/exec';
+const URL_DEF='https://script.google.com/macros/s/AKfycbzv56NAEtf9rgU_lmJCtaR8HYdZtAUv7_eJNiF-4Dqkd_6tX4Q0z0Z9oQffZm3zzc5pMw/exec';if(!CFG.u||CFG.udef!==URL_DEF){CFG.u=URL_DEF;CFG.udef=URL_DEF}
 if(!CFG.d)CFG.d='Cel-'+uid().slice(-4);
 if(!CFG.l)CFG.l='Inventario-'+ld();try{localStorage.setItem('invcfg1',JSON.stringify(CFG))}catch(e){}
 function gmsg(t,c){$('gst').className='st '+(c||'');$('gst').textContent=t}
 function enq(t,k,d){if(!d)return;Q.push({i:uid(),ts:Date.now(),t:t,k:k,d:d,n:t==='c'?name(k):'Código desconocido',b:t==='c'?(P[k]&&P[k].b||''):k});saveQ();head();if(CFG.on&&CFG.u)sched(3000)}
 function sched(ms){clearTimeout(ft);ft=setTimeout(flush,ms)}
-async function post(o){const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),25000);
+async function post(o,ms){const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),ms||25000);
  try{const r=await fetch(CFG.u,{method:'POST',signal:ac.signal,headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({clave:CFG.k,dispositivo:CFG.d,lote:CFG.l},o))});
   const x=await r.text();try{return JSON.parse(x)}catch(e){throw new Error('el script no devolvió JSON; revisa que esté publicado para "Cualquiera"')}}
  catch(e){throw e.name==='AbortError'?new Error('tiempo de espera agotado'):e}finally{clearTimeout(tm)}}
@@ -323,12 +328,13 @@ $('gs').onclick=async()=>{gcfg();if(!CFG.u||!CFG.k)return gmsg('Falta la URL o l
  gmsg('Conexión correcta. Pendientes: '+Q.length,'ok');await flush()};
 $('gsys').onclick=async()=>{gcfg();if(!CFG.u||!CFG.k)return gmsg('Falta la URL o la clave','er');
  const filas=Object.keys(INV).map(c=>[+c,name(c),P[c]&&P[c].b||'',INV[c]]);gmsg('Enviando '+filas.length+' productos…');
- try{const j=await post({accion:'sistema',filas:filas});if(!j.ok)throw new Error(j.error||'Error del script');gmsg('✔ Inventario del sistema enviado ('+filas.length+' productos). La hoja Sistema ya calcula las diferencias.','ok')}
+ try{const j=await post({accion:'sistema',filas:filas},170000);if(!j.ok)throw new Error(j.error||'Error del script');gmsg('✔ Inventario del sistema enviado ('+filas.length+' productos). La hoja Sistema ya calcula las diferencias.','ok')}
  catch(e){gmsg('No se pudo enviar: '+(e.message||''),'er')}};
 window.addEventListener('online',()=>{if(CFG.on)flush()});
 setInterval(()=>{if(CFG.on&&Q.length&&!sending)flush()},30000);
-const adm=()=>{$('gcard').hidden=location.hash!=='#admin'};adm();window.addEventListener('hashchange',adm);$('gsn').onclick=$('gs').onclick;
+const adm=()=>{$('gcard').hidden=location.hash!=='#admin'};adm();window.addEventListener('hashchange',adm);$('gsn').onclick=$('gs').onclick;$('gcb').onclick=()=>{location.hash='#admin';adm();$('gcard').scrollIntoView({block:'center'})};
 if(CFG.on&&Q.length)sched(2000);
+['plus1','indOn','okOn'].forEach(id=>{try{const v=localStorage.getItem('invopt_'+id);if(v!=null)$(id).checked=v==='1'}catch(e){}$(id).addEventListener('change',e=>{try{localStorage.setItem('invopt_'+id,e.target.checked?'1':'0')}catch(x){}})});
 $('gap').value=String(GAP);if(!$('gap').value)$('gap').value='1000';
 $('gap').onchange=e=>{GAP=+e.target.value;try{localStorage.setItem('invgap',GAP)}catch(x){}};
 try{$('autocam').checked=localStorage.getItem('invauto')==='1'}catch(e){}
